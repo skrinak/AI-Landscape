@@ -38,7 +38,7 @@ export function SearchBar({ onSelect }: Props) {
           <Box component="li" key={key} {...rest} sx={{ gap: 1.5 }}>
             <Box
               component="img"
-              src={`/images/${option.node.icon}.png`}
+              src={`${import.meta.env.BASE_URL}images/${option.node.icon}.png`}
               alt=""
               sx={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
             />

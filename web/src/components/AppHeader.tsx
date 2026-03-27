@@ -18,7 +18,7 @@ export function AppHeader({ view, onViewChange }: Props) {
       <Toolbar sx={{ gap: 2 }}>
         <Box
           component="img"
-          src="/images/generic.png"
+          src={`${import.meta.env.BASE_URL}images/generic.png`}
           alt="AI Landscape"
           sx={{ width: 32, height: 32, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.85 }}
         />

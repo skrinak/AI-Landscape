@@ -17,8 +17,9 @@ interface Props {
 
 export function NodeCard({ node, onNavigate, size = 'medium' }: Props) {
   const [elevated, setElevated] = useState(false)
-  const fallback = node.isAws ? '/images/aws.png' : '/images/generic.png'
-  const [imgSrc, setImgSrc] = useState(`/images/${node.icon}.png`)
+  const base = import.meta.env.BASE_URL
+  const fallback = `${base}images/${node.isAws ? 'aws' : 'generic'}.png`
+  const [imgSrc, setImgSrc] = useState(`${base}images/${node.icon}.png`)
   const [imgReady, setImgReady] = useState(false)
   const isLeaf = !node.children?.length
   const iconSize = size === 'large' ? 64 : size === 'medium' ? 48 : 40

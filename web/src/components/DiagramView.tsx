@@ -15,12 +15,14 @@ interface Props {
   onSelectNode: (node: LandscapeNode, path: NavEntry[]) => void
 }
 
+const BASE = import.meta.env.BASE_URL
+
 function fixSvgPaths(raw: string): string {
   return raw
     .replace(/ width="\d+(\.\d+)?pt"/g, ' width="100%"')
     .replace(/ height="\d+(\.\d+)?pt"/g, '')
-    .replace(/xlink:href="[^"]*\/images\/([^"]+\.png)"/g, 'xlink:href="/images/$1"')
-    .replace(/(?<!xlink:)href="[^"]*\/images\/([^"]+\.png)"/g, 'href="/images/$1"')
+    .replace(/xlink:href="[^"]*\/images\/([^"]+\.png)"/g, `xlink:href="${BASE}images/$1"`)
+    .replace(/(?<!xlink:)href="[^"]*\/images\/([^"]+\.png)"/g, `href="${BASE}images/$1"`)
 }
 
 export function DiagramView({ onSelectNode }: Props) {
