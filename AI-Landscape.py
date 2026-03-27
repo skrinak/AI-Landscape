@@ -95,10 +95,10 @@ IC_OSS = I + "opensearch.png"
 IC_M0  = I + "mem0.png"
 IC_LAK = I + "lakera.png"
 IC_FLX = I + "flux.png"
-IC_MCP = I + "anthropic.png"
 IC_GEN = I + "generic.png"
 IC_PG  = I + "postgresql.png"
 IC_MLV = I + "milvus.png"
+IC_STR = I + "strands.png"
 
 with Diagram(
     f"AI Builder Landscape  ·  {today}",
@@ -112,7 +112,7 @@ with Diagram(
     with Cluster("Human Interfaces"):
         web_app   = Client("Web & Mobile")
         chat_ui   = Client("Chat & Voice\n(Connect / IVR)")
-        ide_tools = Client("IDE Copilots\n(Cursor, Copilot, Cline)")
+        ide_tools = Client("Agentic IDEs\n(Kiro, Cursor, Copilot)")
         ent_tools = Client("Enterprise\n(Slack, Teams, Notion)")
         api_users = Client("APIs & Webhooks")
 
@@ -128,8 +128,15 @@ with Diagram(
 
     with Cluster("Agent Orchestration Frameworks"):
         with Cluster("AWS-native"):
-            strands    = Custom("Strands\n(AWS SDK)", IC_AWS)
-            bedrock_ag = BedrockNode("Bedrock Agents\n& AgentCore")
+            strands    = Custom("Strands\n(AWS SDK)", IC_STR)
+            bedrock_ag = BedrockNode("Bedrock Agents")
+            with Cluster("AgentCore"):
+                agc_runtime = BedrockNode("Runtime")
+                agc_memory  = BedrockNode("Memory")
+                agc_code    = BedrockNode("Code Interp")
+                agc_browser = BedrockNode("Browser")
+                agc_gateway = BedrockNode("Action Gateway")
+                agc_id      = BedrockNode("Identity")
 
         with Cluster("Open / Cross-cloud"):
             langgraph = Custom("LangGraph /\nLangChain", IC_LC)
@@ -140,7 +147,7 @@ with Diagram(
             flowise   = Custom("Flowise / n8n", IC_FLW)
 
     with Cluster("Tool & Protocol Layer"):
-        mcp          = Custom("MCP\n(Model Context Protocol)", IC_MCP)
+        mcp          = Custom("MCP\n(Model Context Protocol)", IC_ANT)
         fn_calling   = Custom("Function Calling /\nTool Use", IC_GEN)
         code_interp  = Custom("Code Execution\n(E2B, Sandbox)", IC_E2B)
         web_browse   = Custom("Web Search &\nBrowsing", IC_GEN)
@@ -250,25 +257,57 @@ with Diagram(
         trail_n = Cloudtrail("CloudTrail")
         cfg_n   = Config("Config")
 
-    with Cluster("DevOps & Platform Engineering"):
+    with Cluster("Developer Tooling & CI/CD"):
+        with Cluster("Agentic Coding Assistants"):
+            claude_code = Custom("Claude Code\n(CLI agent)", IC_ANT)
+            codex_ai    = Custom("OpenAI Codex\n(cloud agent)", IC_OAI)
+            copilot     = Custom("GitHub\nCopilot", IC_GH)
+            cursor_ide  = Custom("Cursor /\nWindsurf", IC_GEN)
+            amazon_q    = Custom("Amazon Q\nDeveloper", IC_AWS)
+            kiro        = Custom("Amazon Kiro\n(AI-native IDE)", IC_AWS)
         codepipe   = Codepipeline("CodePipeline")
         codebld    = Codebuild("CodeBuild")
         tf_cdk     = Custom("Terraform /\nCDK / CFN", IC_TF)
         github_act = Custom("GitHub Actions /\nGitLab CI", IC_GHA)
 
+    with Cluster("Product & PRD Design"):
+        with Cluster("PRD Generation"):
+            claude_prd = Custom("Claude\nfor PRDs", IC_ANT)
+            gpt_prd    = Custom("GPT-4o / o3\nfor Specs", IC_OAI)
+            gemini_prd = Custom("Gemini 2.5 Pro\n(long-context)", IC_GGL)
+        with Cluster("PRD Platforms"):
+            notion_prd = Custom("Notion AI", IC_NOT)
+            linear_prd = Custom("Linear /\nJira AI", IC_GEN)
+        with Cluster("Spec Frameworks"):
+            prfaq_tmpl = Custom("Amazon\nPRFAQ", IC_AWS)
+            spec_dev   = Custom("Spec-driven\nDev (Kiro)", IC_AWS)
+            adr_rfc    = Custom("ADR / RFC", IC_GEN)
+        with Cluster("Architecture Tools"):
+            well_arch  = Custom("Well-Architected\nTool", IC_AWS)
+            app_comp   = Custom("App Composer\n(IaC visual)", IC_AWS)
+
+    # ── Human interfaces → API Gateway ────────────────────────────────────
     for iface in [web_app, chat_ui, ide_tools, ent_tools, api_users]:
         iface >> api_gw
     api_gw >> [lambdas, ecs_svc, eks_svc]
 
+    # ── Application Platform → Orchestration ──────────────────────────────
     for src in [lambdas, ecs_svc]:
         src >> Edge(label="invoke") >> [strands, langgraph, crewai]
     step_fn >> Edge(label="orchestrate") >> [strands, bedrock_ag, autogen]
     evtbridge >> [strands, langgraph]
 
+    # ── AgentCore wiring ──────────────────────────────────────────────────
+    agc_runtime >> [agc_memory, agc_code, agc_browser, agc_gateway, agc_id]
+    for src in [strands, bedrock_ag]:
+        src >> agc_runtime
+
+    # ── Orchestration → Tools ─────────────────────────────────────────────
     for orch in [strands, langgraph, crewai, autogen]:
         orch >> mcp
     mcp >> [fn_calling, code_interp, web_browse, computer_use]
 
+    # ── Orchestration → LLM APIs ──────────────────────────────────────────
     for orch in [strands, langgraph, crewai, autogen, sem_kern]:
         orch >> Edge(label="LLM API") >> bedrock_fm
     for orch in [langgraph, crewai, autogen]:
@@ -276,6 +315,7 @@ with Diagram(
     for orch in [dify, flowise]:
         orch >> Edge(label="LLM API") >> [bedrock_fm, ai_apis]
 
+    # ── Model infrastructure → Foundation Models ──────────────────────────
     bedrock_fm >> [claude35, claude4, gpt4o, nova]
     az_oai     >> [gpt4o, o3_mdl]
     vertex_ai  >> [gemini20, gemini25, gemma3]
@@ -283,6 +323,7 @@ with Diagram(
     ollama     >> [llama4, gemma3]
     vllm_svc   >> [llama4, mistral, deepseek]
 
+    # ── MLOps ─────────────────────────────────────────────────────────────
     for src in [s3_lake, rds_db, ddb_db]:
         src >> sm_train
     sm_train >> sm_inf
@@ -290,6 +331,7 @@ with Diagram(
     sm_train >> sm_ops
     sm_inf >> sm_ops
 
+    # ── RAG / retrieval ───────────────────────────────────────────────────
     for orch in [strands, langgraph, bedrock_ag]:
         orch >> Edge(label="retrieve") >> bedrock_kb
     for orch in [langgraph, crewai, autogen]:
@@ -302,9 +344,11 @@ with Diagram(
     for src in [rds_db, ddb_db]:
         src >> llama_idx
 
+    # ── Streams → object store ────────────────────────────────────────────
     for src in [kinesis_s, kafka_s]:
         src >> s3_lake
 
+    # ── LLMOps ───────────────────────────────────────────────────────────
     for orch in [strands, langgraph, crewai]:
         orch >> Edge(label="trace") >> [langsmith, langfuse, cw_llm]
     for src in [bedrock_fm, bedrock_ag]:
@@ -314,6 +358,7 @@ with Diagram(
     for src in [autogen, sem_kern]:
         src >> ragas
 
+    # ── Security ─────────────────────────────────────────────────────────
     for src in [lambdas, ecs_svc, eks_svc, bedrock_fm, sm_inf]:
         src >> iam_n
     for src in [bedrock_fm, sm_inf, s3_lake, ddb_db]:
@@ -324,6 +369,18 @@ with Diagram(
     for src in [lambdas, ecs_svc, bedrock_ag, sm_inf]:
         src >> trail_n
 
+    # ── Developer Tooling ────────────────────────────────────────────────
     for src in [codepipe, codebld, github_act]:
         src >> Edge(label="deploy") >> [lambdas, ecs_svc, eks_svc]
     tf_cdk >> [lambdas, sm_inf, bedrock_ag, bedrock_fm]
+    for tool in [claude_code, codex_ai, copilot, cursor_ide, kiro]:
+        tool >> Edge(label="LLM API") >> bedrock_fm
+    kiro >> Edge(label="spec → code") >> github_act
+
+    # ── PRD Design → LLMs ────────────────────────────────────────────────
+    for prd_tool in [claude_prd, gpt_prd, gemini_prd]:
+        prd_tool >> bedrock_fm
+    spec_dev >> Edge(label="spec → impl") >> kiro
+    prfaq_tmpl >> claude_prd
+    well_arch >> app_comp
+    app_comp >> tf_cdk
