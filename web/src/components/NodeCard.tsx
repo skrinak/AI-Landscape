@@ -17,6 +17,9 @@ interface Props {
 
 export function NodeCard({ node, onNavigate, size = 'medium' }: Props) {
   const [elevated, setElevated] = useState(false)
+  const fallback = node.isAws ? '/images/aws.png' : '/images/generic.png'
+  const [imgSrc, setImgSrc] = useState(`/images/${node.icon}.png`)
+  const [imgReady, setImgReady] = useState(false)
   const isLeaf = !node.children?.length
   const iconSize = size === 'large' ? 64 : size === 'medium' ? 48 : 40
 
@@ -28,8 +31,14 @@ export function NodeCard({ node, onNavigate, size = 'medium' }: Props) {
     }
   }
 
-  const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = node.isAws ? '/images/aws.png' : '/images/generic.png'
+  const handleImgLoad = () => setImgReady(true)
+  const handleImgError = () => {
+    if (imgSrc !== fallback) {
+      setImgReady(false)
+      setImgSrc(fallback)
+    } else {
+      setImgReady(true)
+    }
   }
 
   return (
@@ -57,14 +66,23 @@ export function NodeCard({ node, onNavigate, size = 'medium' }: Props) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                bgcolor: imgReady ? 'transparent' : 'action.hover',
+                borderRadius: 1,
               }}
             >
               <Box
                 component="img"
-                src={`/images/${node.icon}.png`}
+                src={imgSrc}
                 alt={node.label}
+                onLoad={handleImgLoad}
                 onError={handleImgError}
-                sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  opacity: imgReady ? 1 : 0,
+                  transition: 'opacity 0.15s ease',
+                }}
               />
             </Box>
 

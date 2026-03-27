@@ -1,5 +1,6 @@
 from datetime import date
 from pathlib import Path
+import shutil
 
 from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.analytics import KinesisDataStreams
@@ -105,6 +106,7 @@ with Diagram(
     filename=f"Final/ai_landscape_{today.replace('-', '')}",
     show=False,
     direction="TB",
+    outformat=["png", "svg"],
     graph_attr=GRAPH_ATTR,
     node_attr=NODE_ATTR,
 ):
@@ -384,3 +386,8 @@ with Diagram(
     prfaq_tmpl >> claude_prd
     well_arch >> app_comp
     app_comp >> tf_cdk
+
+svg_src = Path(f"Final/ai_landscape_{today.replace('-', '')}.svg")
+svg_dst = Path("Final/diagram.svg")
+if svg_src.exists():
+    shutil.copy(svg_src, svg_dst)
