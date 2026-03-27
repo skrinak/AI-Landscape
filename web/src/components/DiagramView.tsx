@@ -31,7 +31,7 @@ export function DiagramView({ onSelectNode }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetch('/diagram.svg')
+    fetch(`${import.meta.env.BASE_URL}diagram.svg`)
       .then(r => {
         if (!r.ok) throw new Error('not found')
         return r.text()
