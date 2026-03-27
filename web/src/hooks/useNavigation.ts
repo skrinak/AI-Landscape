@@ -10,6 +10,7 @@ interface NavigationState {
 export function useNavigation(): NavigationState & {
   navigate: (node: LandscapeNode) => void
   goTo: (index: number) => void
+  jumpTo: (path: NavEntry[]) => void
 } {
   const [path, setPath] = useState<NavEntry[]>([])
 
@@ -39,5 +40,9 @@ export function useNavigation(): NavigationState & {
     setPath(prev => index < 0 ? [] : prev.slice(0, index + 1))
   }, [])
 
-  return { path, currentNodes: currentNodes(), navigate, goTo }
+  const jumpTo = useCallback((newPath: NavEntry[]) => {
+    setPath(newPath)
+  }, [])
+
+  return { path, currentNodes: currentNodes(), navigate, goTo, jumpTo }
 }
